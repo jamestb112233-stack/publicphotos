@@ -74,12 +74,47 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 5;
     }
 
     .nav:hover { background: rgba(0,0,0,0.75); }
 
     .prev { left: 16px; }
     .next { right: 16px; }
+
+    .topbar {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 6;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .viewer:hover .topbar,
+    .topbar:hover {
+      opacity: 1;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 110px;
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.62);
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      backdrop-filter: blur(4px);
+    }
+
+    .download-btn:hover {
+      background: rgba(0,0,0,0.8);
+    }
 
     .caption {
       margin-top: 14px;
@@ -111,6 +146,17 @@
         height: 46px;
         font-size: 26px;
       }
+
+      .topbar {
+        top: 12px;
+        right: 12px;
+      }
+
+      .download-btn {
+        min-width: 96px;
+        height: 38px;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -121,6 +167,11 @@
 
     <div class="viewer" id="viewer">
       <div class="status" id="status">Loading photos…</div>
+
+      <div class="topbar" id="topbar" style="display:none;">
+        <a id="downloadBtn" class="download-btn" href="#" download>Download</a>
+      </div>
+
       <button class="nav prev" id="prev" style="display:none;">&#8249;</button>
       <img id="photo" style="display:none;" alt="">
       <button class="nav next" id="next" style="display:none;">&#8250;</button>
@@ -133,22 +184,33 @@
     const GITHUB_USER = "jamestb112233-stack";
     const REPO_NAME = "publicphotos";
     const IMAGES_PATH = "images";
+    const AUTOPLAY_MS = 6000;
 
     const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/${IMAGES_PATH}`;
 
     const validExt = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
     let images = [];
     let current = 0;
+    let autoplayTimer = null;
+    let paused = false;
 
+    const viewerEl = document.getElementById("viewer");
     const statusEl = document.getElementById("status");
     const photoEl = document.getElementById("photo");
     const captionEl = document.getElementById("caption");
     const prevBtn = document.getElementById("prev");
     const nextBtn = document.getElementById("next");
+    const topbarEl = document.getElementById("topbar");
+    const downloadBtn = document.getElementById("downloadBtn");
 
     function isImageFile(name) {
       const lower = name.toLowerCase();
       return validExt.some(ext => lower.endsWith(ext));
+    }
+
+    function updateDownloadLink(item) {
+      downloadBtn.href = item.download_url;
+      downloadBtn.download = item.name;
     }
 
     function showImage(index) {
@@ -160,19 +222,68 @@
       photoEl.src = item.download_url;
       photoEl.alt = item.name;
       captionEl.textContent = item.name;
+
+      updateDownloadLink(item);
+
       photoEl.style.display = "block";
       prevBtn.style.display = "flex";
       nextBtn.style.display = "flex";
+      topbarEl.style.display = "block";
       statusEl.style.display = "none";
     }
 
-    prevBtn.addEventListener("click", () => showImage(current - 1));
-    nextBtn.addEventListener("click", () => showImage(current + 1));
+    function startAutoplay() {
+      stopAutoplay();
+      if (images.length <= 1 || paused) return;
+
+      autoplayTimer = setInterval(() => {
+        showImage(current + 1);
+      }, AUTOPLAY_MS);
+    }
+
+    function stopAutoplay() {
+      if (autoplayTimer) {
+        clearInterval(autoplayTimer);
+        autoplayTimer = null;
+      }
+    }
+
+    function pauseAutoplay() {
+      paused = true;
+      stopAutoplay();
+    }
+
+    function resumeAutoplay() {
+      paused = false;
+      startAutoplay();
+    }
+
+    prevBtn.addEventListener("click", () => {
+      showImage(current - 1);
+      startAutoplay();
+    });
+
+    nextBtn.addEventListener("click", () => {
+      showImage(current + 1);
+      startAutoplay();
+    });
+
+    viewerEl.addEventListener("mouseenter", pauseAutoplay);
+    viewerEl.addEventListener("mouseleave", resumeAutoplay);
+
+    downloadBtn.addEventListener("mouseenter", pauseAutoplay);
+    downloadBtn.addEventListener("mouseleave", resumeAutoplay);
 
     document.addEventListener("keydown", (e) => {
       if (!images.length) return;
-      if (e.key === "ArrowLeft") showImage(current - 1);
-      if (e.key === "ArrowRight") showImage(current + 1);
+      if (e.key === "ArrowLeft") {
+        showImage(current - 1);
+        startAutoplay();
+      }
+      if (e.key === "ArrowRight") {
+        showImage(current + 1);
+        startAutoplay();
+      }
     });
 
     let touchStartX = 0;
@@ -180,12 +291,14 @@
 
     photoEl.addEventListener("touchstart", e => {
       touchStartX = e.changedTouches[0].screenX;
+      pauseAutoplay();
     }, { passive: true });
 
     photoEl.addEventListener("touchend", e => {
       touchEndX = e.changedTouches[0].screenX;
       if (touchEndX < touchStartX - 40) showImage(current + 1);
       if (touchEndX > touchStartX + 40) showImage(current - 1);
+      resumeAutoplay();
     }, { passive: true });
 
     fetch(apiUrl)
@@ -203,6 +316,7 @@
 
         images.sort((a, b) => a.name.localeCompare(b.name));
         showImage(0);
+        startAutoplay();
       })
       .catch(err => {
         statusEl.textContent = "Could not load gallery.";

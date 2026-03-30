@@ -110,6 +110,7 @@
       font-size: 14px;
       border: 1px solid rgba(255,255,255,0.14);
       backdrop-filter: blur(4px);
+      cursor: pointer;
     }
 
     .download-btn:hover {
@@ -169,7 +170,7 @@
       <div class="status" id="status">Loading photos…</div>
 
       <div class="topbar" id="topbar" style="display:none;">
-        <a id="downloadBtn" class="download-btn" href="#" download>Download</a>
+        <button id="downloadBtn" class="download-btn" type="button">Download</button>
       </div>
 
       <button class="nav prev" id="prev" style="display:none;">&#8249;</button>
@@ -208,9 +209,33 @@
       return validExt.some(ext => lower.endsWith(ext));
     }
 
-    function updateDownloadLink(item) {
-      downloadBtn.href = item.download_url;
-      downloadBtn.download = item.name;
+    function updateDownloadButton(item) {
+      downloadBtn.onclick = async (e) => {
+        e.preventDefault();
+        pauseAutoplay();
+
+        try {
+          downloadBtn.textContent = "Downloading…";
+
+          const res = await fetch(item.download_url);
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = item.name;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          console.error(err);
+          alert("Download failed.");
+        } finally {
+          downloadBtn.textContent = "Download";
+        }
+      };
     }
 
     function showImage(index) {
@@ -223,7 +248,7 @@
       photoEl.alt = item.name;
       captionEl.textContent = item.name;
 
-      updateDownloadLink(item);
+      updateDownloadButton(item);
 
       photoEl.style.display = "block";
       prevBtn.style.display = "flex";

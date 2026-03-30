@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gallery</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(110,70,40,0.35), transparent 30%),
+        radial-gradient(circle at top right, rgba(90,50,25,0.20), transparent 25%),
+        linear-gradient(180deg, #16110f 0%, #0d0a09 100%);
+      color: #f1ece8;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-weight: 400;
+      text-align: center;
+      letter-spacing: 0.08em;
+    }
+
+    p.intro {
+      margin: 0 0 26px;
+      text-align: center;
+      color: #c9bdb3;
+    }
+
+    .viewer {
+      position: relative;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+    }
+
+    .viewer img {
+      max-width: 100%;
+      max-height: 68vh;
+      object-fit: contain;
+      border-radius: 10px;
+      display: block;
+    }
+
+    .nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 52px;
+      height: 52px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav:hover { background: rgba(0,0,0,0.75); }
+
+    .prev { left: 16px; }
+    .next { right: 16px; }
+
+    .caption {
+      margin-top: 14px;
+      text-align: center;
+      color: #c9bdb3;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    .status {
+      text-align: center;
+      color: #c9bdb3;
+      padding: 40px 20px;
+    }
+
+    @media (max-width: 700px) {
+      .viewer {
+        min-height: 58vh;
+        border-radius: 18px;
+        padding: 14px;
+      }
+
+      .viewer img {
+        max-height: 56vh;
+      }
+
+      .nav {
+        width: 46px;
+        height: 46px;
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Gallery</h1>
+    <p class="intro">A changing selection of shared photos.</p>
+
+    <div class="viewer" id="viewer">
+      <div class="status" id="status">Loading photos…</div>
+      <button class="nav prev" id="prev" style="display:none;">&#8249;</button>
+      <img id="photo" style="display:none;" alt="">
+      <button class="nav next" id="next" style="display:none;">&#8250;</button>
+    </div>
+
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <script>
+    const GITHUB_USER = "jamestb112233-stack";
+    const REPO_NAME = "publicphotos";
+    const IMAGES_PATH = "images";
+
+    const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/${IMAGES_PATH}`;
+
+    const validExt = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+    let images = [];
+    let current = 0;
+
+    const statusEl = document.getElementById("status");
+    const photoEl = document.getElementById("photo");
+    const captionEl = document.getElementById("caption");
+    const prevBtn = document.getElementById("prev");
+    const nextBtn = document.getElementById("next");
+
+    function isImageFile(name) {
+      const lower = name.toLowerCase();
+      return validExt.some(ext => lower.endsWith(ext));
+    }
+
+    function showImage(index) {
+      if (!images.length) return;
+
+      current = (index + images.length) % images.length;
+      const item = images[current];
+
+      photoEl.src = item.download_url;
+      photoEl.alt = item.name;
+      captionEl.textContent = item.name;
+      photoEl.style.display = "block";
+      prevBtn.style.display = "flex";
+      nextBtn.style.display = "flex";
+      statusEl.style.display = "none";
+    }
+
+    prevBtn.addEventListener("click", () => showImage(current - 1));
+    nextBtn.addEventListener("click", () => showImage(current + 1));
+
+    document.addEventListener("keydown", (e) => {
+      if (!images.length) return;
+      if (e.key === "ArrowLeft") showImage(current - 1);
+      if (e.key === "ArrowRight") showImage(current + 1);
+    });
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    photoEl.addEventListener("touchstart", e => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    photoEl.addEventListener("touchend", e => {
+      touchEndX = e.changedTouches[0].screenX;
+      if (touchEndX < touchStartX - 40) showImage(current + 1);
+      if (touchEndX > touchStartX + 40) showImage(current - 1);
+    }, { passive: true });
+
+    fetch(apiUrl)
+      .then(res => {
+        if (!res.ok) throw new Error("Could not read images folder.");
+        return res.json();
+      })
+      .then(data => {
+        images = data.filter(item => item.type === "file" && isImageFile(item.name));
+
+        if (!images.length) {
+          statusEl.textContent = "No images found in /images.";
+          return;
+        }
+
+        images.sort((a, b) => a.name.localeCompare(b.name));
+        showImage(0);
+      })
+      .catch(err => {
+        statusEl.textContent = "Could not load gallery.";
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

@@ -1,352 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gallery</title>
-  <style>
-    * { box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>James's Gallery</title>
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(110,70,40,0.35), transparent 30%),
-        radial-gradient(circle at top right, rgba(90,50,25,0.20), transparent 25%),
-        linear-gradient(180deg, #16110f 0%, #0d0a09 100%);
-      color: #f1ece8;
-      min-height: 100vh;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(180deg, #0f1720 0%, #1a2430 100%);
+  color: #e8e8e8;
+}
 
-    .wrap {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 28px 20px 40px;
-    }
+/* HEADER */
+.header {
+  text-align: center;
+  padding: 50px 20px 30px;
+}
 
-    h1 {
-      margin: 0 0 10px;
-      font-weight: 400;
-      text-align: center;
-      letter-spacing: 0.08em;
-    }
+.header h1 {
+  margin: 0;
+  font-size: 42px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
 
-    p.intro {
-      margin: 0 0 26px;
-      text-align: center;
-      color: #c9bdb3;
-    }
+.header p {
+  margin-top: 10px;
+  color: #b8b8b8;
+  font-size: 16px;
+}
 
-    .viewer {
-      position: relative;
-      background: rgba(0,0,0,0.45);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
-      min-height: 70vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      padding: 20px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-    }
+/* CAROUSEL */
+.carousel {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+}
 
-    .viewer img {
-      max-width: 100%;
-      max-height: 68vh;
-      object-fit: contain;
-      border-radius: 10px;
-      display: block;
-    }
+.image-container {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #111;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+}
 
-    .nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 52px;
-      height: 52px;
-      border: 0;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.55);
-      color: #fff;
-      font-size: 30px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 5;
-    }
+.image-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 
-    .nav:hover { background: rgba(0,0,0,0.75); }
+/* CONTROLS */
+.controls {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+}
 
-    .prev { left: 16px; }
-    .next { right: 16px; }
+.btn {
+  background: rgba(0,0,0,0.4);
+  border: none;
+  color: white;
+  font-size: 22px;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background 0.2s;
+}
 
-    .topbar {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      z-index: 6;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
+.btn:hover {
+  background: rgba(0,0,0,0.6);
+}
 
-    .viewer:hover .topbar,
-    .topbar:hover {
-      opacity: 1;
-    }
+/* CATEGORY STRIP */
+.categories {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 14px;
+  color: #9ca3af;
+}
 
-    .download-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 110px;
-      height: 42px;
-      padding: 0 14px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.62);
-      color: #fff;
-      text-decoration: none;
-      font-size: 14px;
-      border: 1px solid rgba(255,255,255,0.14);
-      backdrop-filter: blur(4px);
-      cursor: pointer;
-    }
+.categories span {
+  margin: 0 12px;
+  cursor: default;
+}
 
-    .download-btn:hover {
-      background: rgba(0,0,0,0.8);
-    }
-
-    .caption {
-      margin-top: 14px;
-      text-align: center;
-      color: #c9bdb3;
-      font-size: 14px;
-      word-break: break-word;
-    }
-
-    .status {
-      text-align: center;
-      color: #c9bdb3;
-      padding: 40px 20px;
-    }
-
-    @media (max-width: 700px) {
-      .viewer {
-        min-height: 58vh;
-        border-radius: 18px;
-        padding: 14px;
-      }
-
-      .viewer img {
-        max-height: 56vh;
-      }
-
-      .nav {
-        width: 46px;
-        height: 46px;
-        font-size: 26px;
-      }
-
-      .topbar {
-        top: 12px;
-        right: 12px;
-      }
-
-      .download-btn {
-        min-width: 96px;
-        height: 38px;
-        font-size: 13px;
-      }
-    }
-  </style>
+.categories span:hover {
+  color: #ffffff;
+}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <h1>James's Gallery</h1>
-    <p class="intro">A changing selection of shared photos.</p>
 
-    <div class="viewer" id="viewer">
-      <div class="status" id="status">Loading photos…</div>
+<div class="header">
+  <h1>James’s Gallery</h1>
+  <p>A changing selection of shared photos</p>
+</div>
 
-      <div class="topbar" id="topbar" style="display:none;">
-        <button id="downloadBtn" class="download-btn" type="button">Download</button>
-      </div>
+<div class="carousel">
+  <div class="image-container">
+    <img id="gallery-image" src="images/photo1.jpg">
 
-      <button class="nav prev" id="prev" style="display:none;">&#8249;</button>
-      <img id="photo" style="display:none;" alt="">
-      <button class="nav next" id="next" style="display:none;">&#8250;</button>
+    <div class="controls">
+      <button class="btn" onclick="prev()">←</button>
+      <button class="btn" onclick="next()">→</button>
     </div>
-
-    <div class="caption" id="caption"></div>
   </div>
 
-  <script>
-    const GITHUB_USER = "jamestb112233-stack";
-    const REPO_NAME = "publicphotos";
-    const IMAGES_PATH = "images";
-    const AUTOPLAY_MS = 6000;
+  <div class="categories">
+    <span>Nature</span>
+    <span>Travel</span>
+    <span>Home</span>
+    <span>Misc</span>
+  </div>
+</div>
 
-    const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/${IMAGES_PATH}`;
+<script>
+const images = [
+  "images/photo1.jpg",
+  "images/photo2.jpg",
+  "images/photo3.jpg",
+  "images/photo4.jpg"
+];
 
-    const validExt = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-    let images = [];
-    let current = 0;
-    let autoplayTimer = null;
-    let paused = false;
+let index = 0;
 
-    const viewerEl = document.getElementById("viewer");
-    const statusEl = document.getElementById("status");
-    const photoEl = document.getElementById("photo");
-    const captionEl = document.getElementById("caption");
-    const prevBtn = document.getElementById("prev");
-    const nextBtn = document.getElementById("next");
-    const topbarEl = document.getElementById("topbar");
-    const downloadBtn = document.getElementById("downloadBtn");
+function showImage() {
+  document.getElementById("gallery-image").src = images[index];
+}
 
-    function isImageFile(name) {
-      const lower = name.toLowerCase();
-      return validExt.some(ext => lower.endsWith(ext));
-    }
+function next() {
+  index = (index + 1) % images.length;
+  showImage();
+}
 
-    function updateDownloadButton(item) {
-      downloadBtn.onclick = async (e) => {
-        e.preventDefault();
-        pauseAutoplay();
+function prev() {
+  index = (index - 1 + images.length) % images.length;
+  showImage();
+}
 
-        try {
-          downloadBtn.textContent = "Downloading…";
+/* autoplay */
+setInterval(next, 6000);
+</script>
 
-          const res = await fetch(item.download_url);
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = item.name;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-
-          URL.revokeObjectURL(url);
-        } catch (err) {
-          console.error(err);
-          alert("Download failed.");
-        } finally {
-          downloadBtn.textContent = "Download";
-        }
-      };
-    }
-
-    function showImage(index) {
-      if (!images.length) return;
-
-      current = (index + images.length) % images.length;
-      const item = images[current];
-
-      photoEl.src = item.download_url;
-      photoEl.alt = item.name;
-      captionEl.textContent = item.name;
-
-      updateDownloadButton(item);
-
-      photoEl.style.display = "block";
-      prevBtn.style.display = "flex";
-      nextBtn.style.display = "flex";
-      topbarEl.style.display = "block";
-      statusEl.style.display = "none";
-    }
-
-    function startAutoplay() {
-      stopAutoplay();
-      if (images.length <= 1 || paused) return;
-
-      autoplayTimer = setInterval(() => {
-        showImage(current + 1);
-      }, AUTOPLAY_MS);
-    }
-
-    function stopAutoplay() {
-      if (autoplayTimer) {
-        clearInterval(autoplayTimer);
-        autoplayTimer = null;
-      }
-    }
-
-    function pauseAutoplay() {
-      paused = true;
-      stopAutoplay();
-    }
-
-    function resumeAutoplay() {
-      paused = false;
-      startAutoplay();
-    }
-
-    prevBtn.addEventListener("click", () => {
-      showImage(current - 1);
-      startAutoplay();
-    });
-
-    nextBtn.addEventListener("click", () => {
-      showImage(current + 1);
-      startAutoplay();
-    });
-
-    viewerEl.addEventListener("mouseenter", pauseAutoplay);
-    viewerEl.addEventListener("mouseleave", resumeAutoplay);
-
-    downloadBtn.addEventListener("mouseenter", pauseAutoplay);
-    downloadBtn.addEventListener("mouseleave", resumeAutoplay);
-
-    document.addEventListener("keydown", (e) => {
-      if (!images.length) return;
-      if (e.key === "ArrowLeft") {
-        showImage(current - 1);
-        startAutoplay();
-      }
-      if (e.key === "ArrowRight") {
-        showImage(current + 1);
-        startAutoplay();
-      }
-    });
-
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    photoEl.addEventListener("touchstart", e => {
-      touchStartX = e.changedTouches[0].screenX;
-      pauseAutoplay();
-    }, { passive: true });
-
-    photoEl.addEventListener("touchend", e => {
-      touchEndX = e.changedTouches[0].screenX;
-      if (touchEndX < touchStartX - 40) showImage(current + 1);
-      if (touchEndX > touchStartX + 40) showImage(current - 1);
-      resumeAutoplay();
-    }, { passive: true });
-
-    fetch(apiUrl)
-      .then(res => {
-        if (!res.ok) throw new Error("Could not read images folder.");
-        return res.json();
-      })
-      .then(data => {
-        images = data.filter(item => item.type === "file" && isImageFile(item.name));
-
-        if (!images.length) {
-          statusEl.textContent = "No images found in /images.";
-          return;
-        }
-
-        images.sort((a, b) => a.name.localeCompare(b.name));
-        showImage(0);
-        startAutoplay();
-      })
-      .catch(err => {
-        statusEl.textContent = "Could not load gallery.";
-        console.error(err);
-      });
-  </script>
 </body>
 </html>
